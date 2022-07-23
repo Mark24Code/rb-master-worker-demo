@@ -1,7 +1,7 @@
 require 'thread'
 
 class Worker
-  attr :name
+  attr :name, :group
   def initialize(name)
     @name = "worker@#{name}"
     @queue = Queue.new
@@ -30,7 +30,7 @@ class Worker
 end
 
 
-class BusyMaster
+class NormalMaster
   def initialize(workers)
     @workers = workers
   end
@@ -40,18 +40,47 @@ class BusyMaster
   end
 end
 
+class ICU996Master
+  def initialize(workers)
+    @current_worker = workers.cycle # 迭代器
+  end
+
+  def assign(job)
+    @current_worker.next << job
+  end
+end
+
+class GroupMaster
+  GROUPS = [:group1, :group2, :group3]
+
+  def initialize(workers)
+    @workers = {}
+    workers_per_group = workers.length / GROUPS.size
+    workers.each_slice(workers_per_group).each_with_index do |slice, index|
+      group_id = GROUPS[index]
+      @workers[group_id] = slice
+    end
+  end
+
+  def assign(job)
+    worker = @workers[job.group].sort_by(&:size).first
+    worker << job
+  end
+end
+
 Masters = {
-  busy: BusyMaster,
-  default: BusyMaster
+  normal: NormalMaster,
+  ICU996: ICU996Master,
+  group: GroupMaster
 }
 
 class Workshop
-  def initialize(count, scheduler_name)
+  def initialize(count, master_name)
     @worker_count = count
     @workers = @worker_count.times.map do |i|
       Worker.new(i)
     end
-    @master = Masters[scheduler_name].new(@workers)
+    @master = Masters[master_name].new(@workers)
   end
 
   def <<(job)
