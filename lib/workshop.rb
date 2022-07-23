@@ -66,3 +66,24 @@ class Workshop
     @workers.map {|m| m.join}
   end
 end
+
+class MiniWorkshop
+  def initialize(count)
+    @worker_count = count
+    @workers = @worker_count.times.map do |i|
+      Worker.new(i)
+    end
+  end
+
+  def <<(job)
+    if job == :done
+      @workers.map {|m| m << job}
+    else
+      @workers.sample << job
+    end
+  end
+
+  def join
+    @workers.map {|m| m.join}
+  end
+end

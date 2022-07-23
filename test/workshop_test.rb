@@ -21,6 +21,21 @@ describe Worker do
     assert_equal finished, ["job1","job2"]
   end
 
+  it "check MiniWorkshop work" do
+    ws = MiniWorkshop.new(2)
+
+    finished = []
+    ws << lambda { puts "job1"; finished.push "job1"}
+    ws << lambda { puts "job2"; finished.push "job2"}
+    ws << lambda { puts "job3"; finished.push "job3"}
+    ws << lambda { puts "job4"; finished.push "job4"}
+    ws << :done
+
+    ws.join
+
+    assert_equal finished.size, 4
+  end
+
   it "check Workshop work" do
     ws = Workshop.new(2, :busy)
 
